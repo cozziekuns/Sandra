@@ -57,7 +57,7 @@ module Parser
       end
     }
 
-    return result
+    return result.sort
   end
 
 end
@@ -308,3 +308,142 @@ player = Game_Player.new(2, Parser.parse_hand(@tiles), 2)
 player.tsumo_tile = Parser.parse_tile(@tsumo_tile)
 
 p Scorer.score_hand(board, player, target=player.index)
+
+=begin
+static calcMentsuConfigurations(hand, maxMentsu=4) {
+    let queue = [[hand, [], 0, false]];
+
+    while (queue.length > 0) {
+      const nextElement = queue.shift();
+
+      const currentHand = nextElement[0];
+      const oldHand = nextElement[1];
+      const mentsu = nextElement[2];
+      const hasAtama = nextElement[3];
+
+      // Return all the configurations in the queue that have an empty
+      // currentHand.
+      if (currentHand.length === 0) {
+        return [oldHand].concat(
+          queue
+            .filter(element => element[0].length === 0)
+            .map(element => element[1])
+        );
+      }
+
+      if (currentHand.length > 2 && mentsu < maxMentsu) {
+        // Kootsu
+        if (
+          currentHand[0] === currentHand[1] && 
+          currentHand[1] === currentHand[2]
+        ) {
+          queue.push([
+            currentHand.slice(3, currentHand.length),
+            oldHand.concat([currentHand.slice(0, 3)]),
+            mentsu + 1,
+            hasAtama,
+          ]);
+        }
+
+        // Shuntsu
+        if (Util.tileValue(currentHand[0]) < 8) {
+          if (
+            currentHand.includes(currentHand[0] + 1) && 
+            currentHand.includes(currentHand[0] + 2)
+          ) {
+            const newHand = currentHand.slice(1, currentHand.length);
+            newHand.splice(newHand.indexOf(currentHand[0] + 1), 1);
+            newHand.splice(newHand.indexOf(currentHand[0] + 2), 1);
+
+            const shuntsu = [
+              currentHand[0],
+              currentHand[0] + 1,
+              currentHand[0] + 2,
+            ];
+
+            queue.push(
+              [newHand, oldHand.concat([shuntsu]), mentsu + 1, hasAtama],
+            );
+          }
+
+        }
+      }
+
+      if (currentHand.length > 1) {
+        // Toitsu
+        if (
+          currentHand[0] === currentHand[1] && 
+          (!hasAtama || mentsu < maxMentsu)
+        ) {
+          queue.push([
+            currentHand.slice(2, currentHand.length),
+            oldHand.concat([currentHand.slice(0, 2)]),
+            (hasAtama ? mentsu + 1 : mentsu),
+            true,
+          ]);
+        }
+
+        if (mentsu < maxMentsu) {
+          // Ryanmen / Penchan
+          if (
+            Util.tileValue(currentHand[0]) < 9 &&
+            currentHand.includes(currentHand[0] + 1)
+          ) {
+            const newHand = currentHand.slice(1, currentHand.length);
+            newHand.splice(newHand.indexOf(currentHand[0] + 1), 1);
+
+            const taatsu = [currentHand[0], currentHand[0] + 1];
+            queue.push(
+              [newHand, oldHand.concat([taatsu]), mentsu + 1, hasAtama],
+            );
+          }
+
+          // Kanchan
+          if (
+            Util.tileValue(currentHand[0]) < 8 &&
+            currentHand.includes(currentHand[0] + 2)
+          ) {
+            const newHand = currentHand.slice(1, currentHand.length);
+            newHand.splice(newHand.indexOf(currentHand[0] + 2), 1);
+
+            const taatsu = [currentHand[0], currentHand[0] + 2];
+            queue.push(
+              [newHand, oldHand.concat([taatsu]), mentsu + 1, hasAtama],
+            );
+          }
+        }
+      }
+
+      // Tanki
+      queue.push([
+        currentHand.slice(1, currentHand.length),
+        oldHand.concat([currentHand.slice(0, 1)]),
+        mentsu,
+        hasAtama,
+      ]);
+    }
+
+    throw 'Invalid input.';
+  }
+
+  static calcChiitoiConfiguration(hand) {
+    const configuration = [];
+    const toitsu = [];
+
+    for (let i = 0; i < hand.length - 1; i++) {
+      if (toitsu.includes(hand[i])) {
+        continue;
+      }
+
+      if (hand[i] === hand[i + 1]) {
+        toitsu.push(hand[i]);
+        configuration.push([hand[i], hand[i + 1]]);
+        i++;
+      } else {
+        configuration.push([hand[i]]);
+      }
+    }
+
+    return configuration;
+  }
+=end
