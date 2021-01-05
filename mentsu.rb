@@ -1,5 +1,7 @@
 require_relative './tile_util.rb'
 
+# TODO: BaseConfiguration Interface I guess
+
 #==============================================================================
 # ** MentsuConfiguration
 #==============================================================================
@@ -73,6 +75,48 @@ class MentsuConfiguration
     end
 
     return outs
+  end
+
+end
+
+#==============================================================================
+# ** ChiitoiConfiguration
+#==============================================================================
+
+class ChiitoiConfiguration
+
+  attr_reader   :blocks
+  attr_reader   :shanten
+
+  def initialize(blocks)
+    @blocks = blocks
+    @shanten = calc_shanten
+    @outs_to_block_index = nil
+  end
+
+  def calc_shanten
+    return 6 - @blocks.select { |block| block.length == 2 }.length
+  end
+
+  def outs
+    return outs_to_block_index.keys
+  end
+
+  def outs_to_block_index
+    return @outs_to_block_index unless @outs_to_block_index.nil?
+    
+    @outs_to_block_index = {}
+    
+    pairs = blocks.select { |block| block.length == 2 }
+    
+    @blocks.each.with_index { |block, i|
+      next if block.length == 2
+      next if pairs.include?(block[0])
+      
+      @outs_to_block_index[block[0]] = [i]
+    }
+    
+    return @outs_to_block_index
   end
 
 end

@@ -1,3 +1,4 @@
+require 'set'
 require_relative './tile_util.rb'
 require_relative './mentsu.rb'
 
@@ -11,11 +12,37 @@ module ConfigurationUtil
     all_configurations = calc_configurations(hand)
     min_shanten = all_configurations.map { |configuration| configuration.shanten }.min
 
+    chiitoi_configuration = calc_chiitoi_configuration(hand)
+
     min_shanten_configurations = all_configurations.select { |configuration|
       configuration.shanten == min_shanten
     }
 
+    if chiitoi_configuration.shanten < min_shanten
+      return ConfigurationList.new([chiitoi_configuration]) 
+    elsif chiitoi_configuration.shanten == min_shanten
+      min_shanten_configurations.push(chiitoi_configuration)
+    end
+
     return ConfigurationList.new(min_shanten_configurations)
+  end
+  
+  def self.calc_chiitoi_configuration(hand)
+    blocks = []
+    seen = Set.new
+    
+    i = 0
+    while i < hand.length    
+      if i < hand.length - 1 and hand[i] == hand[i + 1] and not seen.include?(hand[i])
+        blocks.push([hand[i], hand[i]])
+        i += 2
+      else
+        blocks.push([hand[i]])
+        i += 1
+      end
+    end
+    
+    return ChiitoiConfiguration.new(blocks)
   end
 
   def self.calc_configurations(hand)
@@ -142,11 +169,13 @@ end
 
 class ConfigurationList
 
+  attr_reader   :tiles
   attr_reader   :outs_map
   attr_reader   :configurations
 
   def initialize(configurations)
     @configurations = configurations
+    @tiles = @configurations[0].blocks.flatten.sort
     create_outs_map
   end
 

@@ -17,12 +17,11 @@ class Node_Configuration
   end
 
   def memo_size
-    puts @@memo.keys
     return @@memo.keys.length
   end
 
   def hashcode
-    return mentsu_configuration_list.configurations[0].blocks.flatten.join(',')
+    return mentsu_configuration_list.tiles.join(',')
   end
 
   def create_children
@@ -44,16 +43,17 @@ class Node_Configuration
           new_blocks.each.with_index { |block, i|
             next unless block.length == 1
 
+            # TODO: Precalculate hashcode so we can skip cloning
             new_new_blocks = new_blocks.clone
             new_new_blocks.delete_at(i)
 
-            hashcode = new_new_blocks.flatten.join(',')
+            hashcode = new_new_blocks.flatten.sort.join(',')
 
             if @@memo[hashcode]
               discard_to_configuration_map[block[0]] = @@memo[hashcode]
             else
               floats[block[0]] ||= []
-              floats[block[0]].push(MentsuConfiguration.new(new_new_blocks))
+              floats[block[0]].push(configuration.class.new(new_new_blocks))
             end
           }
         }
