@@ -8,6 +8,7 @@ def simulate(node, wall_tiles, wall, draws)
   @memo[draws] ||= {}
 
   return @memo[draws][node] if @memo[draws].has_key?(node)
+  return 0 if node.mentsu_configuration_list.shanten >= draws
 
   agari_chance = 0
 
@@ -24,7 +25,7 @@ def simulate(node, wall_tiles, wall, draws)
 
     best_discard_agari_rate = -1
 
-    if node.mentsu_configuration_list.shanten == 1
+    if node.mentsu_configuration_list.shanten == 0
       best_discard_agari_rate = tsumo_chance
     else
       node.children[out].keys.each { |discard|
@@ -46,8 +47,10 @@ end
 # hand = '288m1356899p348s'
 # hand = '1122338m3457p23s'
 # hand = '12345699m2356s9s'
-# hand = '34m3489p44579s12z'
+# hand = '345m3489p44579s1z'
 # hand = '133m224679p779s1z'
+# hand = '12269m67p245s123z' # Need to check
+hand = '123456789m19p19s'
 parsed_hand = Parser.parse_hand(hand)
 
 wall_tiles = Array.new(34, 4)
@@ -56,8 +59,26 @@ parsed_hand.each { |tile| wall_tiles[tile] -= 1 }
 t = Time.now
 
 configuration_list = ConfigurationUtil.configuration_list_from_hand(parsed_hand)
-node = Node_Configuration.new(configuration_list)
+configuration_list.configurations.each { |s| p s.blocks }
 
-18.downto(1) { |draws| p simulate(node, wall_tiles, 123 - (18 - draws), draws) }
+p configuration_list.outs.sort
+
+node = Node_Configuration.new(configuration_list)
+p node.memo_size
+
+18.downto(1) { |draws| puts "%0.2f" % [simulate(node, wall_tiles, 123 - (18 - draws), draws) * 100] + "%" }
+
+__END__
+
+@memo.keys.each { |draw|
+  p "Draw: #{draw}"
+  @memo[draw].keys.each { |node|
+    p node.hashcode
+    node.mentsu_configuration_list.configurations.each { |configuration|
+      p configuration.blocks
+    }
+    p @memo[draw][node]
+  }
+}
 
 p Time.now - t

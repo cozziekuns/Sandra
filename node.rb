@@ -12,6 +12,13 @@ class Node_Configuration
   def initialize(mentsu_configuration_list)
     @mentsu_configuration_list = mentsu_configuration_list
     create_children
+
+    @@memo[hashcode] = self
+  end
+
+  def memo_size
+    puts @@memo.keys
+    return @@memo.keys.length
   end
 
   def hashcode
@@ -30,7 +37,7 @@ class Node_Configuration
       configurations.each { |configuration|
         configuration.outs_to_block_index[out].each { |i|
           new_blocks = configuration.blocks.clone
-          
+
           new_blocks[i] = new_blocks[i] + [out]
           new_blocks[i].sort!
 
@@ -56,7 +63,6 @@ class Node_Configuration
         configuration_list = ConfigurationList.new(floats[key])
         child_node = Node_Configuration.new(configuration_list)
 
-        @@memo[child_node.hashcode] = child_node
         discard_to_configuration_map[key] = child_node
       }
 

@@ -35,9 +35,9 @@ class MentsuConfiguration
 
     @blocks.each.with_index { |block, i|
       next if block.length == 3
-      next if usable_atama == 1 and block.length == 2 and block[0] == block[1]
+      next if usable_atama == 1 and usable_blocks == 5 and block.length == 2 and block[0] == block[1]
 
-      if block.length == 2 or usable_blocks < 4
+      if block.length == 2 or (usable_blocks < 5 and usable_atama > 0) or usable_blocks < 4
         get_outs_for_block(block).each { |out|
           @outs_to_block_index[out] ||= []
           @outs_to_block_index[out].push(i)
@@ -54,6 +54,8 @@ class MentsuConfiguration
 
   def get_outs_for_block(block)
     outs = []
+
+    return [block[0]] if TileUtil.tile_value(block[0]) == 10
 
     if block.length == 1
       -2.upto(2) { |i|
