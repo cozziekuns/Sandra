@@ -309,27 +309,22 @@ player.tsumo_tile = Parser.parse_tile(@tsumo_tile)
 
 p Scorer.score_hand(board, player, target=player.index)
 
+def calc_mentsu_configurations(hand, max_mentsu=4)
+  queue = [[hand, [], 0, false]]
+
+  while (queue.length > 0)
+    current_hand, old_hand, mentsu, has_atama = queue.shift
+
+    if current_hand.empty?
+      complete_hands = queue.filter { |element| element.empty? }
+      return [old_hand] + complete_hands.map { |element| element[1] }
+    end
+  end
+
+end
+
 =begin
 static calcMentsuConfigurations(hand, maxMentsu=4) {
-    let queue = [[hand, [], 0, false]];
-
-    while (queue.length > 0) {
-      const nextElement = queue.shift();
-
-      const currentHand = nextElement[0];
-      const oldHand = nextElement[1];
-      const mentsu = nextElement[2];
-      const hasAtama = nextElement[3];
-
-      // Return all the configurations in the queue that have an empty
-      // currentHand.
-      if (currentHand.length === 0) {
-        return [oldHand].concat(
-          queue
-            .filter(element => element[0].length === 0)
-            .map(element => element[1])
-        );
-      }
 
       if (currentHand.length > 2 && mentsu < maxMentsu) {
         // Kootsu
