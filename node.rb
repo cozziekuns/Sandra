@@ -8,6 +8,7 @@ class Node_Configuration
   attr_reader   :mentsu_configuration_list
 
   @@memo = {}
+  @@memo_children = {}
 
   def initialize(mentsu_configuration_list)
     @mentsu_configuration_list = mentsu_configuration_list
@@ -28,33 +29,46 @@ class Node_Configuration
     @children = {}
 
     return if @mentsu_configuration_list.shanten == 0
+    
+    curr_tiles = @mentsu_configuration_list.tiles
 
     @mentsu_configuration_list.outs_map.each { |out, configurations|
       floats = {}
       discard_to_configuration_map = {}
+      
+      curr_tiles.push(out)
+      hashcode_child = curr_tiles.sort.join(',')
+      
+      if @@memo_children[hashcode_child]
+        @children[out] = @@memo_children[hashcode_child]
+        curr_tiles.pop
+        next
+      end
 
       configurations.each { |configuration|
-        configuration.outs_to_block_index[out].each { |i|
-          new_blocks = configuration.blocks.clone
-
-          new_blocks[i] = new_blocks[i] + [out]
-          new_blocks[i].sort!
-
-          new_blocks.each.with_index { |block, i|
-            next unless block.length == 1
-
-            # TODO: Precalculate hashcode so we can skip cloning
-            new_new_blocks = new_blocks.clone
-            new_new_blocks.delete_at(i)
-
-            hashcode = new_new_blocks.flatten.sort.join(',')
-
+        configuration.outs_to_block_index[out].each { |j|  
+          configuration.blocks.each.with_index { |block_to_replace, i|
+            next if j == i
+            next unless block_to_replace.length == 1
+            
+            # Cloning is slow, so we avoid it at all costs
+            temp = curr_tiles.index(block_to_replace[0])
+            curr_tiles.delete_at(temp)
+            hashcode = curr_tiles.sort.join(',')
+            curr_tiles.insert(temp, block_to_replace[0])
+            
             if @@memo[hashcode]
-              discard_to_configuration_map[block[0]] = @@memo[hashcode]
-            else
-              floats[block[0]] ||= []
-              floats[block[0]].push(configuration.class.new(new_new_blocks))
+              discard_to_configuration_map[block_to_replace[0]] = @@memo[hashcode]
+              next
             end
+
+            new_blocks = configuration.blocks.clone
+            new_blocks[j] = new_blocks[j] + [out]
+            new_blocks[j].sort!
+            new_blocks.delete_at(i)
+            
+            floats[block_to_replace[0]] ||= []
+            floats[block_to_replace[0]].push(configuration.class.new(new_blocks))
           }
         }
       }
@@ -66,7 +80,8 @@ class Node_Configuration
         discard_to_configuration_map[key] = child_node
       }
 
-      @children[out] = discard_to_configuration_map
+      @children[out] = @@memo_children[hashcode_child] = discard_to_configuration_map
+      curr_tiles.pop
     }
   end
 
